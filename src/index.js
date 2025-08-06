@@ -5,7 +5,7 @@ import dbConnection from "./DB/db.connection.js";
 
 const app = express();
 
-// Barser middleware
+// Parser middleware
 app.use(express.json());
 
 //database connection

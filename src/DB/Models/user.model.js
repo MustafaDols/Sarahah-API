@@ -43,10 +43,10 @@ const userSchema = new mongoose.Schema(
         password: {
             type: String,
             required: true,
-            set(value) {
-                const randomValue = Math.random() * 1000000
-                return `${value}__${randomValue}`
-            }
+        },
+        phoneNumber: {
+            type: String,
+            required: true
         },
     }, {
     timestamps: true,

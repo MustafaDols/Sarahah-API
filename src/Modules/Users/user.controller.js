@@ -1,16 +1,14 @@
 import { Router } from "express";
-import { signUpService } from './Services/user.service.js';
-import { signinService } from './Services/user.service.js';
-import { updateAccountService } from './Services/user.service.js';
-import { deleteAccountService } from './Services/user.service.js';
-
+import * as userServices from "./Services/user.service.js";
 const router = Router();
 
 
-router.post("/signup", signUpService);
-router.post("/signin", signinService);
-router.put("/update/:userId", updateAccountService);
-router.delete("/delete/:userId", deleteAccountService);
-
+router.post("/signup", userServices.signUpService);
+router.post("/signin", userServices.signinService);
+router.put("/update/:userId", userServices.updateAccountService);
+router.delete("/delete/:userId", userServices.deleteAccountService);
+router.get("/list", userServices.listUsersService);
+ 
 export default router;
+
 
