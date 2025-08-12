@@ -1,10 +1,14 @@
 import { hashSync } from "bcrypt";
 import User from "../../../DB/Models/user.model.js";
-import { encrypt } from "../../../Utils/encryption.utils.js";
+import { assymetricDecryption, assymetricEncryption, encrypt, decrypt } from "../../../Utils/encryption.utils.js";
+import { sendEmail } from "../../../Utils/send-email.utils.js";
+import { compareSync } from "bcrypt";
+import { customAlphabet } from "nanoid";
+import { emitter } from "../../../Utils/send-email.utils.js"
 
+const uniqueString = customAlphabet('1234567890abcdef', 5)
 export const signUpService = async (req, res) => {
-    try {
-
+    
         const { firstname, lastname, email, password, age, gender, phoneNumber } = req.body
 
         const isUserExist = await User.findOne({
@@ -21,32 +25,79 @@ export const signUpService = async (req, res) => {
         //Encrypt phone number
         const encryptedPhoneNumber = assymetricEncryption(phoneNumber)
 
-
         //Hash password
-        const hashedPassword = hashSync(password, 10)
+        const hashedPassword = hashSync(password, +process.env.SALT_ROUNDS)
 
+        const otp = uniqueString()
 
-        const user = await User.create({ firstname, lastname, email, password: hashedPassword, age, gender, phoneNumber: encryptedPhoneNumber })
+        const user = await User.create({
+            firstname,
+            lastname,
+            email,
+            password: hashedPassword,
+            age,
+            gender,
+            phoneNumber: encryptedPhoneNumber,
+            otps: { confirmation: hashSync(otp, +process.env.SALT_ROUNDS) }
+        })
+
+        //Send email for registred user
+        // await sendEmail({
+        //     to: email,
+        //     subject: "Confirmation email",
+        //     content: ` Your confirmation otp is ${otp} `,
+        //     attachments: [
+        //         {
+        //             filename: "confirmation.png",
+        //             path: "confirmation.png"
+        //         }
+        //     ]
+        // })
+
+        emitter.emit('sendEmail', {
+            to: email,
+            subject: "Confirmation email",
+            content: ` Your confirmation otp is ${otp} `,
+            attachments: [
+                {
+                    filename: "confirmation.png",
+                    path: "confirmation.png"
+                }
+            ]
+        })
 
         // const userInstance = new User({ firstname, lastname, email, password, age, gender })
         // const user = await userInstance.save()
-
         return res.status(201).json({ message: "User created successfully", user })
+}
 
-    } catch (error) {
 
-        res.status(500).json({ message: "Internal server error", error })
+export const confirmEmailService = async (req, res, next) => {
+
+    const { email, otp } = req.body
+    const user = await User.findOne({ email , isConfirmed: false }) 
+
+    if (!user) {
+        // return res.status(404).json({ message: "User not found or already confirmed"  });
+        return next(new Error("User not found or already confirmed", { cause: 400 }))
     }
+    
+    const isOtpMatch = compareSync(otp, user.otps?.confirmation)
+    if (!isOtpMatch) {
+        return res.status(404).json({ message: "Invalid otp"  });
+    }
+    
+    user.isConfirmed = true
+    user.otps.confirmation = undefined
 
+    await user.save()
+    return res.status(200).json({ message: "Email confirmed successfully", user })
 }
 
 
 export const signinService = async (req, res) => {
 
-    try {
-
         const { email, password } = req.body
-
         const user = await User.findOne({ email })
 
         if (!user) {
@@ -58,22 +109,14 @@ export const signinService = async (req, res) => {
         if (!isPasswordMatch) {
             return res.status(404).json({ message: "Invalid email or password" });
         }
-
         return res.status(200).json({ message: "User signed in successfully", user })
-
-    } catch (error) {
-        res.status(500).json({ message: "Internal server error", error })
-    }
 }
 
 
 export const updateAccountService = async (req, res) => {
 
-    try {
-
         const { userId } = req.params
         const { firstname, lastname, email, age, gender } = req.body
-
         const user = await User.findById(userId)
 
         if (!user) {
@@ -95,36 +138,25 @@ export const updateAccountService = async (req, res) => {
 
         await user.save()
         return res.status(200).json({ message: "User updated successfully", user })
-
-    } catch (error) {
-
-        res.status(500).json({ message: "Internal server error", error })
-    }
 }
 
 
 export const deleteAccountService = async (req, res) => {
 
-    try {
         const { userId } = req.params
         const deletedResult = await User.deleteOne({ _id: userId })
+
         if (!deletedResult.deletedCount) {
             return res.status(404).json({ message: "User not found" });
         }
-
         return res.status(200).json({ message: "User deleted successfully" })
-
-    } catch (error) {
-        res.status(500).json({ message: "Internal server error", error })
-    }
-
 }
 
 
-
 export const listUsersService = async (req, res) => {
-    try {
+    
         let users = await User.find()
+
         users = users.map((user) => {
             return {
                 ...user._doc,
@@ -132,7 +164,4 @@ export const listUsersService = async (req, res) => {
             }
         })
         return res.status(200).json({ message: "Users fetched successfully", users })
-    } catch (error) {
-        res.status(500).json({ message: "Internal server error", error })
-    }
 }

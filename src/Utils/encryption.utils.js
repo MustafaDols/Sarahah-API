@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 
-const ENCRYPTION_SECRET_KEY = Buffer.from('12345678901234567890123456789012')
-const IV_LENGTH = 16
+const ENCRYPTION_SECRET_KEY = Buffer.from(process.env.ENCRYPTION_SECRET_KEY)
+const IV_LENGTH = process.env.IV_LENGTH
 
 export const encrypt = (text) => {
     const iv = crypto.randomBytes(IV_LENGTH);

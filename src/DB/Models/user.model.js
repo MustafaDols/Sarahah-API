@@ -48,6 +48,15 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: true
         },
+        otps: {
+
+            confirmation:String,
+            resetPassword:String
+        },
+        isConfirmed: {
+            type: Boolean,
+            default: false
+        }
     }, {
     timestamps: true,
     toJSON: {
@@ -75,7 +84,7 @@ const userSchema = new mongoose.Schema(
     },
     collection: "users"
 });
- 
+
 //Compound index Schema level
 userSchema.index({ firstname: 1, lastname: 1 }, { name: "idx_first_last_name_unique", unique: true });
 
