@@ -1,15 +1,16 @@
-import { compareSync , hashSync } from "bcrypt";
+import { compareSync, hashSync } from "bcrypt";
 import User from "../../../DB/Models/user.model.js";
 import BlackListedTokens from "../../../DB/Models/black-listed-tokens.model.js";
 import { assymetricDecryption, assymetricEncryption, encrypt, decrypt } from "../../../Utils/encryption.utils.js";
 import { customAlphabet } from "nanoid";
 import { emitter } from "../../../Utils/send-email.utils.js"
 import { v4 as uuidv4 } from "uuid"
-import { generateToken , verifyToken } from "../../../Utils/tokens.utils.js";
+import { generateToken, verifyToken } from "../../../Utils/tokens.utils.js";
+
 
 const uniqueString = customAlphabet('1234567890abcdef', 5)
 
- 
+
 export const signUpService = async (req, res) => {
 
     const { firstname, lastname, email, password, age, gender, phoneNumber } = req.body
@@ -115,26 +116,38 @@ export const signinService = async (req, res) => {
 
     // Generate token for logged in user
     const accesstoken = generateToken(
-        { _Id: user._id, email: user.email },
+        { _id: user._id, email: user.email },
         process.env.JWT_ACCESS_SECRET,
         {
             // issuer: 'https://localhost:3000',
             // audience: 'https://localhost:4000',
+            //expiresIn: parseInt(process.env.JWT_ACCESS_EXPIRES_IN),
             expiresIn: process.env.JWT_ACCESS_EXPIRES_IN,
             jwtid: uuidv4()
         }
     )
-    return res.status(200).json({ message: "User signed in successfully", accesstoken })
+    const refreshtoken = generateToken(
+        { _id: user._id, email: user.email },
+        process.env.JWT_REFRESH_SECRET,
+        {
+
+            expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
+            jwtid: uuidv4()
+        }
+    )
+    return res.status(200).json({ message: "User signed in successfully", accesstoken, refreshToken })
 }
 
 
 export const updateAccountService = async (req, res) => {
 
-    const { _Id } = req.loggedInUser
+    const { _id } = req.loggedInUser.user;
+
     const { firstname, lastname, email, age, gender } = req.body
+    console.log(req.loggedInUser);
 
     const user = await User.findByIdAndUpdate(
-        _Id,
+        _id,
         { firstname, lastname, email, age, gender },
         { new: true }
     )
@@ -160,29 +173,49 @@ export const deleteAccountService = async (req, res) => {
 
 export const listUsersService = async (req, res) => {
 
-    let users = await User.find()
+    let users = await User.find().populate("Messages")
 
-    users = users.map((user) => {
-        return {
-            ...user._doc,
-            phoneNumber: assymetricDecryption(user.phoneNumber)
-        }
-    })
+    // users = users.map((user) => {
+    //     return {
+    //         ...user._doc,
+    //         phoneNumber: assymetricDecryption(user.phoneNumber)
+    //     }
+    // })
     return res.status(200).json({ message: "Users fetched successfully", users })
 }
 
 
 export const LogoutService = async (req, res) => {
- 
-    const {accessToken} = req.headers
-    const decodedData = verifyToken(accessToken, process.env.JWT_ACCESS_SECRET)
 
-    const expirationDate = new Date(decodedData.exp*1000)
+    const { token: { tokenId, expirationDate }, user: { _Id } } = req.loggedInUser
 
-    const blackListedToken = await BlackListedTokens.create({
-        tokenId: decodedData.jti,
-        expirationDate
+    await BlackListedTokens.create({
+        tokenId,
+        expirationDate: new Date(expirationDate * 1000),
+        userId: _Id
     })
 
     return res.status(200).json({ message: "User logged out successfully" })
+}
+
+
+
+export const RefreshTokenService = async (req, res) => {
+
+    const { refreshtoken } = req.headers
+    const decodedData = verifyToken(refreshtoken, process.env.JWT_REFRESH_SECRET)
+    if (!decodedData) {
+        return res.status(400).json({ message: "Invalid refresh token" });
+    }
+
+    const accesstoken = generateToken(
+        { _id: decodedData._id, email: decodedData.email },
+        process.env.JWT_ACCESS_SECRET,
+        {
+            expiresIn: process.env.JWT_ACCESS_EXPIRES_IN,
+            jwtid: uuidv4()
+        }
+    )
+    return res.status(200).json({ message: "Token refreshed successfully", accesstoken })
+
 }

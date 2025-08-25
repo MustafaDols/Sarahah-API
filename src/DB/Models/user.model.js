@@ -88,6 +88,17 @@ const userSchema = new mongoose.Schema(
 //Compound index Schema level
 userSchema.index({ firstname: 1, lastname: 1 }, { name: "idx_first_last_name_unique", unique: true });
 
+//create virtuals
+userSchema.virtual("Messages", {
+    ref:"Messages",
+    localField:"_id",
+    foreignField:"receiverId"
+})
+    
+
+
+
+
 //create model
 const User = mongoose.model("User", userSchema);
 

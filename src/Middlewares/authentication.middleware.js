@@ -2,7 +2,6 @@ import { verifyToken } from "../Utils/tokens.utils.js";
 import User from "../DB/Models/user.model.js";
 import BlackListedTokens from "../DB/Models/black-listed-tokens.model.js";
 
-
 export const authenticationMiddleware = async (req, res, next) => {
     const { accesstoken } = req.headers;
     if (!accesstoken) {
@@ -18,11 +17,15 @@ export const authenticationMiddleware = async (req, res, next) => {
     if (blackListedToken) {
         return res.status(401).json({ message: "Token is blacklisted" });
     }
+    console.log("Decoded Data:", decodedData);
     //get userData from DB
-    const user = await User.findById(decodedData._Id)
+    const user = await User.findById(decodedData._id, '-password').lean();
+
     if (!user) {
-        return res.status(400).json({ message: "User not found" })
+        return res.status(400).json({ message: "User not found" });
     }
-    req.loggedInUser = user
+
+
+    req.loggedInUser = { user, token: { tokenId: decodedData.jti, expirationDate: decodedData.exp } }
     next()
 }   
