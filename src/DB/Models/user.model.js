@@ -1,5 +1,8 @@
 //user schema
 import mongoose from "mongoose";
+import { GenderEnum, RoleEnum } from "../../Common/enums/user.enum.js";
+
+
 const userSchema = new mongoose.Schema(
     {
         firstname: {
@@ -29,8 +32,8 @@ const userSchema = new mongoose.Schema(
         },
         gender: {
             type: String,
-            enum: ["male", "female"],
-            default: "male"
+            enum: Object.values(GenderEnum),
+            default: GenderEnum.MALE
         },
         email: {
             type: String,
@@ -50,12 +53,17 @@ const userSchema = new mongoose.Schema(
         },
         otps: {
 
-            confirmation:String,
-            resetPassword:String
+            confirmation: String,
+            resetPassword: String
         },
         isConfirmed: {
             type: Boolean,
             default: false
+        },
+        role: {
+            type: String,
+            enum: Object.values(RoleEnum),
+            default: RoleEnum.USER
         }
     }, {
     timestamps: true,
@@ -78,10 +86,10 @@ const userSchema = new mongoose.Schema(
             console.log(`Hi ${this.fullname}`);
         }
     },
-    capped: {
-        size: 1024,
-        max: 100
-    },
+    // capped: {
+    //     size: 1024,
+    //     max: 100
+    // },
     collection: "users"
 });
 
@@ -90,11 +98,11 @@ userSchema.index({ firstname: 1, lastname: 1 }, { name: "idx_first_last_name_uni
 
 //create virtuals
 userSchema.virtual("Messages", {
-    ref:"Messages",
-    localField:"_id",
-    foreignField:"receiverId"
+    ref: "Messages",
+    localField: "_id",
+    foreignField: "receiverId"
 })
-    
+
 
 
 
