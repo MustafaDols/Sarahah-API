@@ -1,12 +1,12 @@
 
 
 export const GenderEnum = {
-    MALE: "MALE",
-    FEMALE: "FEMALE"
+    MALE: "male",
+    FEMALE: "female"
 }
 
 export const RoleEnum = {
-    ADMIN: "ADMIN",
-    USER: "USER",
-    SUPER_ADMIN: "SUPER_ADMIN"
+    ADMIN: "admin",
+    USER: "user",
+    SUPER_ADMIN: "super_admin"
 }
