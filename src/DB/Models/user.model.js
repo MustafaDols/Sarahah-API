@@ -1,6 +1,6 @@
 //user schema
 import mongoose from "mongoose";
-import { GenderEnum, RoleEnum } from "../../Common/enums/user.enum.js";
+import { GenderEnum, RoleEnum, providerEnum } from "../../Common/enums/user.enum.js";
 
 
 const userSchema = new mongoose.Schema(
@@ -16,14 +16,10 @@ const userSchema = new mongoose.Schema(
         lastname: {
             type: String,
             required: true,
-            minLength: [3, "last name must be at least 3 characters long"],
-            maxLength: [20, "last name must be at most 20 characters long"],
-            lowercase: true,
-            trim: true
+            lowercase: true
         },
         age: {
             type: Number,
-            required: true,
             minLength: [18, "Age must be at least 18 years old"],
             maxLength: [100, "Age must be at most 100 years old"],
             index: {
@@ -48,8 +44,7 @@ const userSchema = new mongoose.Schema(
             required: true,
         },
         phoneNumber: {
-            type: String,
-            required: true
+            type: String
         },
         otps: {
 
@@ -64,6 +59,11 @@ const userSchema = new mongoose.Schema(
             type: String,
             enum: Object.values(RoleEnum),
             default: RoleEnum.USER
+        },
+        privider: {
+            type: String,
+            enum: Object.values(providerEnum),
+            default: providerEnum.LOCAL
         }
     }, {
     timestamps: true,
@@ -72,6 +72,10 @@ const userSchema = new mongoose.Schema(
     },
     toObject: {
         virtuals: true
+    },
+    googleSub: {
+        type: String,
+        unique: true
     },
     virtuals: {
         fullname: {

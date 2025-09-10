@@ -10,3 +10,8 @@ export const RoleEnum = {
     USER: "user",
     SUPER_ADMIN: "super_admin"
 }
+
+export const providerEnum = {
+    LOCAL: "local",
+    GOOGLE: "google",
+}
