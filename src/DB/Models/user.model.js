@@ -60,10 +60,13 @@ const userSchema = new mongoose.Schema(
             enum: Object.values(RoleEnum),
             default: RoleEnum.USER
         },
-        privider: {
+        provider: {
             type: String,
             enum: Object.values(providerEnum),
             default: providerEnum.LOCAL
+        }, profilePicture: {
+            secure_url: String,
+            public_id: String
         }
     }, {
     timestamps: true,

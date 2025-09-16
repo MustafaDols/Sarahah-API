@@ -1,20 +1,26 @@
-import 'dotenv/config'
+import 'dotenv/config';
+//Dependencies
 import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+//Modules
 import userRouter from "./Modules/Users/user.controller.js";
 import messageRouter from "./Modules/Messages/message.controller.js";
+//DB
 import dbConnection from "./DB/db.connection.js";
-import helmet from "helmet";
-import cors from "cors"
+//Middlewares
+import { generalLimiter , authLimiter } from './Middlewares/rate-limiter.middleware.js';
+
 
 const app = express();
 
 // Parser middleware
 app.use(express.json());
+app.use("/uploads", express.static("uploads"));
 
 
-
-//CORS
-const whitelist = process.env.WHITE_LISTED_ORIGINS
+// Some CORS options
+const whitelist = process.env.WHITE_LISTED_ORIGINS || [];
 const corsOptions = {
     origin: function (origin, callback) {
         console.log("origin: ", origin);
@@ -26,9 +32,13 @@ const corsOptions = {
         }
     }
 }
-app.use(cors(corsOptions))
 
-//database connection
+// Use some Security middlewares
+app.use(cors(corsOptions))
+app.use(generalLimiter)
+app.use(helmet())
+
+// database connection
 dbConnection(); 
 
 // Handle routes
@@ -37,7 +47,7 @@ app.use("/messages", messageRouter);
 
 // Error handling middleware
 app.use(async(error, req, res, next) => {
-    console.log("session inside error handling middleware: " , req.session);
+    console.log("session inside error handling middleware: " , req.session );
 
     if(req.session && req.session.inTransaction()){
 
@@ -50,7 +60,7 @@ app.use(async(error, req, res, next) => {
     res.status(error.cause||500).json({ message: "something broke!", error: error.message ,stack: error.stack });
 });
 
-//Not found middleware
+// Not found middleware
 app.use((req, res) => {
     res.status(404).send("Page Not found!");
 });
