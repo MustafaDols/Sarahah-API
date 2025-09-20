@@ -47,9 +47,12 @@ const userSchema = new mongoose.Schema(
             type: String
         },
         otps: {
-
-            confirmation: String,
-            resetPassword: String
+            confirmation: { type: String },
+            resetPassword: {
+                code: { type: String },
+                expiresAt: { type: Date },
+                verified: { type: Boolean, default: false }
+            }
         },
         isConfirmed: {
             type: Boolean,

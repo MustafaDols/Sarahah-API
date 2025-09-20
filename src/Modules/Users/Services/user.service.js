@@ -149,28 +149,35 @@ export const updateAccountService = async (req, res) => {
 
 
 export const deleteAccountService = async (req, res) => {
-    //start session
+
+    const { user: { _id } } = req.loggedInUser
+    // start session
     const session = await mongoose.startSession()
     req.session = session
-    const { _id } = req.loggedInUser.user
-
-    //start transaction
+    // start transaction
     session.startTransaction()
 
     const deletedUser = await User.findByIdAndDelete(_id, { session })
-
     if (!deletedUser) {
         return res.status(404).json({ message: "User not found" })
     }
 
-    //unlink profile picture
+    // we should use one of them not the both
+
+    // unlink profile picture if it uploaded locally    
     fs.unlinkSync(deletedUser.profilePicture)
-    //delete messages
+
+    // delete by public id if it uploaded on cloudinary
+    await DeleteFileFromCloudinary(deletedUser.profilePicture.public_id)
+
+    // delete user messages
     await Messages.deleteMany({ receiverId: _id }, { session })
-    //commit transaction
+
+    // commit transaction
     await session.commitTransaction()
-    //end session
+    // end session
     session.endSession()
+    console.log(`The transaction is commited`);
 
     return res.status(200).json({ message: "User deleted successfully", deletedUser })
 
@@ -189,7 +196,6 @@ export const listUsersService = async (req, res) => {
     })
     return res.status(200).json({ message: "Users fetched successfully", users })
 }
-
 
 
 export const LogoutService = async (req, res) => {
@@ -240,6 +246,58 @@ export const updatePasswordService = async (req, res) => {
     return res.status(200).json({ message: "Password updated successfully" });
 
 }
+
+
+export const resetPasswordService = async (req, res) => {
+
+    const { email } = req.body
+
+    const user = await User.findOne({ email })
+    if (!user) {
+        return res.status(404).json({ message: "user not found" })
+    }
+
+    const otp = uniqueString()
+
+    emitter.emit("sendingEmail", {
+        to: email,
+        subject: "code confirm",
+        content: `Your code opt is : ${otp}`
+    })
+
+    user.otps.resetPassword = hashSync(otp, +process.env.SALT_Rounds)
+    await user.save()
+
+    return res.status(201).json({ message: "OTP sent successfully, please check your email" })
+
+}
+export const forgotPasswordService = async (req, res) => {
+    
+        const { email } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
+
+        emitter.emit("sendingEmail", {
+            to: email,
+            subject: "Password Reset Code",
+            content: `Your reset code is: ${otp}`
+        });
+
+        user.otps = {
+            resetPassword: {
+                code: hashSync(otp, +process.env.SALT_ROUNDS),
+                expiresAt: Date.now() + 10 * 60 * 1000 // 10 mins
+            }
+        };
+        await user.save();
+
+        return res.status(200).json({ message: "OTP sent successfully, check your email" });   
+};
+
+
 
 export const authServiceWithGemail = async (req, res) => {
 
@@ -322,9 +380,24 @@ export const uploadProfileService = async (req, res) => {
         }
     }, { new: true })
 
-    return res.status(200).json({ message: "profile uploaded successfully", user , secure_url })
+    return res.status(200).json({ message: "profile uploaded successfully", user, secure_url })
 
 }
+
+
+export const deleteExpiredTokensService = async (req, res) => {
+    try {
+        const result = await BlackListedToken.deleteMany({
+            expirationDate: { $lt: new Date() }
+        });
+
+        return res.status(200).json({ message: "Expired tokens deleted successfully", result });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "error", error })
+    }
+}
+
 
 export const deleteFromCloudinaryService = async (req, res) => {
     const { public_id } = req.body

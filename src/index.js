@@ -10,10 +10,10 @@ import messageRouter from "./Modules/Messages/message.controller.js";
 import dbConnection from "./DB/db.connection.js";
 //Middlewares
 import { generalLimiter , authLimiter } from './Middlewares/rate-limiter.middleware.js';
-
+ 
 
 const app = express();
-
+  
 // Parser middleware
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));

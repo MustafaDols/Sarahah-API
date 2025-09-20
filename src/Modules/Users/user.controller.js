@@ -13,19 +13,23 @@ const router = Router();
 
 
 //Authentication Routes
-router.post("/signup", authLimiter, validationMiddleware(SignUpSchema), userServices.signUpService);
-router.post("/signin", authLimiter, userServices.signinService);
-router.put("/confirm", userServices.confirmEmailService)
-router.post("/logout", authenticationMiddleware, userServices.LogoutService);
-router.post("/refresh-token", userServices.RefreshTokenService);
+router.post("/signup", authLimiter, validationMiddleware(SignUpSchema), userServices.signUpService); 
+router.post("/signin", authLimiter, userServices.signinService); 
+router.put("/confirm", userServices.confirmEmailService) 
+router.post("/logout", authenticationMiddleware, userServices.LogoutService); 
+router.post("/refresh-token", userServices.RefreshTokenService); 
+router.delete("/deletExpiredTokens", userServices.deleteExpiredTokensService);
 router.post("/auth-gmail", userServices.authServiceWithGemail);
 
 //Account Routes
-router.put("/update", authenticationMiddleware, userServices.updateAccountService);
+router.put("/update", authenticationMiddleware, userServices.updateAccountService); 
 router.delete("/delete/:userId", authenticationMiddleware, userServices.deleteAccountService);
-router.put("/updatePassword", authenticationMiddleware, userServices.updatePasswordService);
-router.post("/upload-profile", authenticationMiddleware, hostUpload({}).single("profile"), userServices.uploadProfileService);
-router.delete("/delete-profile", userServices.deleteFromCloudinaryService)
+router.put("/updatePassword", authenticationMiddleware, userServices.updatePasswordService); 
+router.put("/resetPassword", userServices.resetPasswordService); 
+router.put("/forgotPassword", userServices.forgotPasswordService); 
+router.post("/upload-profile", authenticationMiddleware, hostUpload({}).single("profile"), userServices.uploadProfileService); 
+router.delete("/delete-profile", userServices.deleteFromCloudinaryService);
+router.delete("/delete-profile-from-cloudinary", userServices.deleteFromCloudinaryService);
 
 //Admin Routes
 router.get("/list", authenticationMiddleware, autraizationMiddleware([RoleEnum.super_admin, RoleEnum.admin]), userServices.listUsersService);
@@ -33,3 +37,4 @@ router.get("/list", authenticationMiddleware, autraizationMiddleware([RoleEnum.s
 export default router;
 
 
+ 

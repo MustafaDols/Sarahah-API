@@ -3,7 +3,7 @@
 
 export const autraizationMiddleware = (allowedRoles) => {
     return (req, res, next) => {
-        const { role } = req.loggedInUser.user
+        const { role } = req.loggedInUser
         if (allowedRoles.includes(role)) {
             return next();
         }
