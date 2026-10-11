@@ -49,13 +49,7 @@ export const signUpService = async (req, res) => {
     emitter.emit('sendEmail', {
         to: email,
         subject: "Confirmation email",
-        content: ` Your confirmation otp is ${otp} `,
-        attachments: [
-            {
-                filename: "confirmation.png",
-                path: "confirmation.png"
-            }
-        ]
+        content: ` Your confirmation otp is ${otp} `
     })
     return res.status(201).json({ message: "User created successfully", user })
 }
@@ -80,9 +74,22 @@ export const confirmEmailService = async (req, res, next) => {
     user.otps.confirmation = undefined
 
     await user.save()
-    return res.status(200).json({ message: "Email confirmed successfully", user })
-}
 
+    emitter.emit('sendEmail', {
+        to: email,
+        subject: "Welcome ",
+        content: "Email confirmed successfully",
+        attachments: [
+            {
+                filename: "confirmation.png",
+                path: "confirmation.png"
+            }
+        ]
+    })
+
+    return res.status(200).json({ message: "Email confirmed successfully" })
+
+}
 
 export const signinService = async (req, res) => {
 
@@ -165,7 +172,7 @@ export const deleteAccountService = async (req, res) => {
     // we should use one of them not the both
 
     // unlink profile picture if it uploaded locally    
-    fs.unlinkSync(deletedUser.profilePicture)
+    // fs.unlinkSync(deletedUser.profilePicture)
 
     // delete by public id if it uploaded on cloudinary
     await DeleteFileFromCloudinary(deletedUser.profilePicture.public_id)
@@ -250,51 +257,58 @@ export const updatePasswordService = async (req, res) => {
 
 export const resetPasswordService = async (req, res) => {
 
-    const { email } = req.body
+    const { email } = req.body;
 
-    const user = await User.findOne({ email })
+    const user = await User.findOne({ email });
     if (!user) {
-        return res.status(404).json({ message: "user not found" })
+        return res.status(404).json({ message: "User not found" });
     }
 
-    const otp = uniqueString()
+
+    const otp = uniqueString();
 
     emitter.emit("sendingEmail", {
         to: email,
-        subject: "code confirm",
-        content: `Your code opt is : ${otp}`
-    })
+        subject: "Code Confirmation",
+        content: `Your OTP code is: ${otp}`,
+    });
 
-    user.otps.resetPassword = hashSync(otp, +process.env.SALT_Rounds)
-    await user.save()
+
+    user.otps.resetPassword = {
+        code: hashSync(otp, +process.env.SALT_ROUNDS),
+        expiresAt: Date.now() + 15 * 60 * 1000, // expires in 15 minutes
+        verified: false,
+    };
+
+    await user.save();
 
     return res.status(201).json({ message: "OTP sent successfully, please check your email" })
 
 }
 export const forgotPasswordService = async (req, res) => {
-    
-        const { email } = req.body;
 
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ message: "User not found" });
+    const { email } = req.body;
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-        emitter.emit("sendingEmail", {
-            to: email,
-            subject: "Password Reset Code",
-            content: `Your reset code is: ${otp}`
-        });
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
 
-        user.otps = {
-            resetPassword: {
-                code: hashSync(otp, +process.env.SALT_ROUNDS),
-                expiresAt: Date.now() + 10 * 60 * 1000 // 10 mins
-            }
-        };
-        await user.save();
+    emitter.emit("sendingEmail", {
+        to: email,
+        subject: "Password Reset Code",
+        content: `Your reset code is: ${otp}`
+    });
 
-        return res.status(200).json({ message: "OTP sent successfully, check your email" });   
+    user.otps = {
+        resetPassword: {
+            code: hashSync(otp, +process.env.SALT_ROUNDS),
+            expiresAt: Date.now() + 10 * 60 * 1000 // 10 mins
+        }
+    };
+    await user.save();
+
+    return res.status(200).json({ message: "OTP sent successfully, check your email" });
 };
 
 

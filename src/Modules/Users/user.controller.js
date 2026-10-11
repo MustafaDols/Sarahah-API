@@ -30,7 +30,7 @@ router.put("/forgotPassword", userServices.forgotPasswordService);
 router.post("/upload-profile", authenticationMiddleware, hostUpload({}).single("profile"), userServices.uploadProfileService); 
 router.delete("/delete-profile", userServices.deleteFromCloudinaryService);
 router.delete("/delete-profile-from-cloudinary", userServices.deleteFromCloudinaryService);
-
+ 
 //Admin Routes
 router.get("/list", authenticationMiddleware, autraizationMiddleware([RoleEnum.super_admin, RoleEnum.admin]), userServices.listUsersService);
 

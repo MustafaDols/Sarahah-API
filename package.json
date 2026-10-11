@@ -4,7 +4,8 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "start": "node ."
+    "start": "cross-env NODE_ENV=dev node .",
+    "dev": "cross-env NODE_ENV=dev nodemon ."
   },
   "keywords": [],
   "author": "Mustafa M. Abd-elaziz",
@@ -14,6 +15,7 @@
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",

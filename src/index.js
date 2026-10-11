@@ -12,9 +12,9 @@ import dbConnection from "./DB/db.connection.js";
 import { generalLimiter , authLimiter } from './Middlewares/rate-limiter.middleware.js';
  
 
-const app = express();
+const app = express();  
   
-// Parser middleware
+// Parser middleware 
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
