@@ -14,7 +14,7 @@ import { generalLimiter , authLimiter } from './Middlewares/rate-limiter.middlew
 
 const app = express();  
   
-// Parser middleware 
+// Parser middleware  
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
